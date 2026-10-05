@@ -1,3 +1,27 @@
+# PolyLogic64's Starship Fork
+
+The only thing I did was change the [`cmd_duration`](https://starship.rs/config/#command-duration) formatting (commit [`9f9bc5e`](9f9bc5ecd6cf8b8cf2f24a9117fad83c1d863739)), to show the two most significant digits and to show milliseconds as fractional seconds and not as a separate field:
+```
+0ms    -> 0.000s
+250ms  -> 0.250s
+999ms  -> 0.999s
+1s     -> 1s
+12.5s  -> 12.500s
+59s    -> 59.000s
+1m     -> 1m
+1m 23s -> 1m23s
+1h     -> 1h
+1h 12m -> 1h12m
+1d     -> 1d
+1d 4h  -> 1d4h
+```
+
+It also respects the config options for [`cmd_duration`](https://starship.rs/config/#command-duration).
+
+I still have to make the tests pass, but in manual testing it works.
+
+# Original README below
+
 <p align="center">
   <img
     width="400"
