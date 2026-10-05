@@ -768,42 +768,54 @@ pub fn exec_timeout(cmd: &mut Command, time_limit: Duration) -> Option<CommandOu
 
 // Render the time into a nice human-readable string
 pub fn render_time(raw_millis: u128, show_millis: bool) -> String {
-    // Fast returns for zero cases to render something
-    match (raw_millis, show_millis) {
-        (0, true) => return "0ms".into(),
-        (0..=999, false) => return "0s".into(),
-        _ => (),
-    }
+    let millis = raw_millis % 1000;
+    let total_seconds = raw_millis / 1000;
 
-    // Calculate a simple breakdown into days/hours/minutes/seconds/milliseconds
-    let (millis, raw_seconds) = (raw_millis % 1000, raw_millis / 1000);
-    let (seconds, raw_minutes) = (raw_seconds % 60, raw_seconds / 60);
-    let (minutes, raw_hours) = (raw_minutes % 60, raw_minutes / 60);
-    let (hours, days) = (raw_hours % 24, raw_hours / 24);
+    let seconds = total_seconds % 60;
+    let total_minutes = total_seconds / 60;
 
-    // Calculate how long the string will be to allocate once in most cases
-    let result_capacity = match raw_millis {
-        1..=59 => 3,
-        60..=3599 => 6,
-        3600..=86399 => 9,
-        _ => 12,
-    } + if show_millis { 5 } else { 0 };
+    let minutes = total_minutes % 60;
+    let total_hours = total_minutes / 60;
 
-    let components = [(days, "d"), (hours, "h"), (minutes, "m"), (seconds, "s")];
+    let hours = total_hours % 24;
+    let days = total_hours / 24;
 
-    // Concat components ito result starting from the first non-zero one
-    let result = components.iter().fold(
-        String::with_capacity(result_capacity),
-        |acc, (component, suffix)| match component {
-            0 if acc.is_empty() => acc,
-            n => acc + &n.to_string() + suffix,
-        },
-    );
+    match (days, hours, minutes, seconds) {
+        // Day-level durations: days and nonzero hours only.
+        (days, hours, _, _) if days > 0 => {
+            if hours > 0 {
+                format!("{days}d{hours}h")
+            } else {
+                format!("{days}d")
+            }
+        }
 
-    if show_millis {
-        result + &millis.to_string() + "ms"
-    } else {
-        result
+        // Hour-level durations: hours and nonzero minutes only.
+        (0, hours, minutes, _) if hours > 0 => {
+            if minutes > 0 {
+                format!("{hours}h{minutes}m")
+            } else {
+                format!("{hours}h")
+            }
+        }
+
+        // Minute-level durations: minutes and nonzero seconds only.
+        (0, 0, minutes, seconds) if minutes > 0 => {
+            if seconds > 0 {
+                format!("{minutes}m{seconds}s")
+            } else {
+                format!("{minutes}m")
+            }
+        }
+
+        // Second-level durations: optionally include milliseconds.
+        (_, _, _, seconds) => {
+            if show_millis {
+                format!("{seconds}.{millis:03}s")
+            } else {
+                format!("{seconds}s")
+            }
+        }
     }
 }
 
